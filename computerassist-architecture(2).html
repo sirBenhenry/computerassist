@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ComputerAssist — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@400;500;600&family=Source+Serif+4:wght@600;700&display=swap');
+  :root {
+    --bg: #FAF9F6;
+    --surface: #FFFFFF;
+    --border: #E2DFD9;
+    --border-light: #EEECE7;
+    --text: #2B2A27;
+    --text-2: #6B6862;
+    --text-3: #9C9890;
+    --l1: #3D7ABF;
+    --l1-bg: #EFF4FB;
+    --l1-border: #C4D5ED;
+    --l1-node: #F6F9FD;
+    --l1-stroke: #AECAE8;
+    --l2: #7558B2;
+    --l2-bg: #F2EFF8;
+    --l2-border: #D0C3E3;
+    --l2-node: #F9F7FC;
+    --l2-stroke: #C2B1D9;
+    --srv: #B47520;
+    --srv-bg: #FDF5E8;
+    --srv-border: #E4CFA4;
+    --srv-node: #FFFBF2;
+    --srv-stroke: #DCC48F;
+    --l3: #2C7F5E;
+    --l3-bg: #EDF6F1;
+    --l3-border: #B4D6C5;
+    --l3-node: #F5FBF8;
+    --l3-stroke: #A2CBB6;
+    --fb: #BF5545;
+    --star: #C08B10;
+    --gate: #CC6F1C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Source Sans 3',system-ui,sans-serif;line-height:1.6}
+  .hdr{text-align:center;padding:50px 40px 28px}
+  .hdr h1{font-family:'Source Serif 4',Georgia,serif;font-size:2.2rem;font-weight:700;color:var(--text);letter-spacing:-0.01em}
+  .hdr p{color:var(--text-2);font-size:.88rem;margin-top:6px;font-family:'Source Code Pro',monospace;letter-spacing:.04em;text-transform:uppercase;font-weight:500}
+  .hdr::after{content:'';display:block;width:80px;height:2px;background:var(--border);margin:20px auto 0}
+  .legend{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:12px 20px;margin-bottom:8px}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:.72rem;font-family:'Source Code Pro',monospace;color:var(--text-2);font-weight:500}
+  .legend-swatch{width:13px;height:13px;border-radius:3px;border:1px solid}
+  .diagram-wrap{width:100%;overflow-x:auto;padding:20px}
+  svg.arch{display:block;margin:0 auto;max-width:1700px;width:100%;height:auto}
+  .ref{max-width:1400px;margin:0 auto;padding:40px 28px 80px}
+  .ref h2{font-family:'Source Serif 4',Georgia,serif;font-size:1.7rem;font-weight:700;color:var(--text);margin-bottom:6px}
+  .ref>p{color:var(--text-2);font-size:.9rem;margin-bottom:36px}
+  .ltag{font-family:'Source Code Pro',monospace;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin:44px 0 16px;padding:7px 14px;display:inline-block;border-radius:4px}
+  .ltag.l1{color:var(--l1);background:var(--l1-bg);border:1px solid var(--l1-border)}
+  .ltag.l2{color:var(--l2);background:var(--l2-bg);border:1px solid var(--l2-border)}
+  .ltag.srv{color:var(--srv);background:var(--srv-bg);border:1px solid var(--srv-border)}
+  .ltag.l3{color:var(--l3);background:var(--l3-bg);border:1px solid var(--l3-border)}
+  .ltag.cross{color:var(--fb);background:#FDF0EE;border:1px solid #E8C5BF}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px}
+  .c{background:var(--surface);border:1px solid var(--border-light);border-radius:8px;padding:22px;position:relative}
+  .c:hover{border-color:var(--border)}
+  .c .n{font-family:'Source Code Pro',monospace;font-size:.62rem;color:var(--text-3);position:absolute;top:10px;right:14px;letter-spacing:.06em}
+  .c h3{font-size:1rem;font-weight:700;margin-bottom:10px;padding-right:44px}
+  .c h3 .star{color:var(--star)}
+  .c .m{display:flex;flex-direction:column;gap:9px}
+  .c .mr{display:flex;gap:8px;font-size:.84rem;line-height:1.5}
+  .c .ml{font-family:'Source Code Pro',monospace;font-size:.67rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;min-width:68px;padding-top:2px;flex-shrink:0}
+  .c .mv{color:var(--text-2)}
+  .c code{font-family:'Source Code Pro',monospace;font-size:.8em;color:var(--l2);background:var(--l2-bg);padding:1px 5px;border-radius:3px}
+  .c.l1{border-left:3px solid var(--l1)}
+  .c.l2{border-left:3px solid var(--l2)}
+  .c.srv{border-left:3px solid var(--srv)}
+  .c.l3{border-left:3px solid var(--l3)}
+  .c.cross{border-left:3px solid var(--fb)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>ComputerAssist</h1>
+  <p>System Architecture · 4 Layers + Server Sidebar</p>
+</div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--l1-bg);border-color:var(--l1)"></div>Layer 1 — Input</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--l2-bg);border-color:var(--l2)"></div>Layer 2 — Prediction</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--srv-bg);border-color:var(--srv)"></div>Personal Server</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--l3-bg);border-color:var(--l3)"></div>Layer 3 — Execution</div>
+  <div class="legend-item"><svg width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="var(--fb)" stroke-width="1.5" stroke-dasharray="5 3"/></svg>Feedback Loop</div>
+</div>
+<div class="diagram-wrap">
+<svg class="arch" viewBox="0 0 1700 1440" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a1" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#3D7ABF"/></marker>
+  <marker id="a2" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#7558B2"/></marker>
+  <marker id="as" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#B47520"/></marker>
+  <marker id="a3" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#2C7F5E"/></marker>
+  <marker id="ag" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#CC6F1C"/></marker>
+  <marker id="af" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#BF5545"/></marker>
+  <style>
+    text{font-family:'Source Sans 3',system-ui,sans-serif}
+    .mono{font-family:'Source Code Pro',monospace}
+    .layer-label{font-size:10px;font-weight:600;letter-spacing:0.1em}
+    .node-title{font-size:12.5px;font-weight:700}
+    .node-sub{font-size:9px;fill:#7A776F}
+    .edge-label{font-size:8px;fill:#8A877F}
+    .edge-label-bold{font-size:8.5px;fill:#6B6862;font-weight:600}
+  </style>
+</defs>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- LAYER 1 — INPUT                             -->
+<!-- ════════════════════════════════════════════ -->
+<rect x="60" y="30" width="1060" height="300" rx="10" fill="#EFF4FB" stroke="#C4D5ED" stroke-width="1"/>
+<text x="82" y="56" class="mono layer-label" fill="#3D7ABF">LAYER 1 — INPUT</text>
+
+<!-- Collectors -->
+<rect x="75" y="82" width="178" height="55" rx="6" fill="#F6F9FD" stroke="#AECAE8" stroke-width="1"/>
+<text x="164" y="106" text-anchor="middle" class="node-title" fill="#2B4A72">OS Events</text>
+<text x="164" y="122" text-anchor="middle" class="node-sub">inotify · evdev · proc</text>
+
+<rect x="273" y="82" width="178" height="55" rx="6" fill="#F6F9FD" stroke="#AECAE8" stroke-width="1"/>
+<text x="362" y="106" text-anchor="middle" class="node-title" fill="#2B4A72">Shell / Terminal</text>
+<text x="362" y="122" text-anchor="middle" class="node-sub">zsh precmd / preexec</text>
+
+<rect x="471" y="82" width="178" height="55" rx="6" fill="#F6F9FD" stroke="#AECAE8" stroke-width="1"/>
+<text x="560" y="106" text-anchor="middle" class="node-title" fill="#2B4A72">WezTerm</text>
+<text x="560" y="122" text-anchor="middle" class="node-sub">Lua API · Pane / Tab events</text>
+
+<rect x="669" y="82" width="178" height="55" rx="6" fill="#F6F9FD" stroke="#AECAE8" stroke-width="1"/>
+<text x="758" y="106" text-anchor="middle" class="node-title" fill="#2B4A72">Context Signals</text>
+<text x="758" y="122" text-anchor="middle" class="node-sub">Battery · WiFi · GPS · Time</text>
+
+<rect x="867" y="82" width="178" height="55" rx="6" fill="#F6F9FD" stroke="#AECAE8" stroke-width="1"/>
+<text x="956" y="106" text-anchor="middle" class="node-title" fill="#2B4A72">App Integrations</text>
+<text x="956" y="122" text-anchor="middle" class="node-sub">Community plugin API</text>
+
+<!-- ★ Feature Extraction -->
+<rect x="240" y="218" width="640" height="72" rx="7" fill="#FFFCF0" stroke="#C08B10" stroke-width="1.8"/>
+<text x="476" y="252" text-anchor="middle" font-size="15" font-weight="700" fill="#C08B10">★</text>
+<text x="560" y="252" text-anchor="middle" font-size="14" font-weight="700" fill="#5A4300">Feature Extraction Layer</text>
+<text x="560" y="272" text-anchor="middle" font-size="9" fill="#8A8070">Raw events → Structured, weighted feature vectors · Schema normalisation · Session context tagging</text>
+
+<!-- Collector → FE arrows -->
+<path d="M164,137 L164,178 L295,178 L295,218" fill="none" stroke="#8BB4DD" stroke-width="1.2" marker-end="url(#a1)"/>
+<path d="M362,137 L362,178 L408,178 L408,218" fill="none" stroke="#8BB4DD" stroke-width="1.2" marker-end="url(#a1)"/>
+<path d="M560,137 L560,218" fill="none" stroke="#8BB4DD" stroke-width="1.2" marker-end="url(#a1)"/>
+<path d="M758,137 L758,178 L712,178 L712,218" fill="none" stroke="#8BB4DD" stroke-width="1.2" marker-end="url(#a1)"/>
+<path d="M956,137 L956,178 L825,178 L825,218" fill="none" stroke="#8BB4DD" stroke-width="1.2" marker-end="url(#a1)"/>
+
+<!-- Stream label -->
+<text x="560" y="356" text-anchor="middle" class="mono" font-size="10" font-weight="600" fill="#8A877F">▼  UNIFIED EVENT STREAM  ▼</text>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- LAYER 2 — PREDICTION                        -->
+<!-- ════════════════════════════════════════════ -->
+<rect x="60" y="390" width="1060" height="440" rx="10" fill="#F2EFF8" stroke="#D0C3E3" stroke-width="1"/>
+<text x="82" y="416" class="mono layer-label" fill="#7558B2">LAYER 2 — PREDICTION</text>
+
+<!-- HMM -->
+<rect x="90" y="460" width="260" height="66" rx="6" fill="#F9F7FC" stroke="#C2B1D9" stroke-width="1"/>
+<text x="220" y="488" text-anchor="middle" class="node-title" fill="#3D2D6B">HMM</text>
+<text x="220" y="506" text-anchor="middle" class="node-sub">Hidden Markov Model · Baum-Welch</text>
+
+<!-- VMM (heavier border = core engine) -->
+<rect x="430" y="460" width="260" height="66" rx="6" fill="#F9F7FC" stroke="#9B82C8" stroke-width="1.8"/>
+<text x="560" y="488" text-anchor="middle" class="node-title" fill="#3D2D6B">VMM</text>
+<text x="560" y="506" text-anchor="middle" class="node-sub">Variable-Order Markov · Core Engine</text>
+
+<!-- Fuzzy Pattern Store -->
+<rect x="770" y="460" width="260" height="66" rx="6" fill="#F9F7FC" stroke="#C2B1D9" stroke-width="1"/>
+<text x="900" y="488" text-anchor="middle" class="node-title" fill="#3D2D6B">Fuzzy Pattern Store</text>
+<text x="900" y="506" text-anchor="middle" class="node-sub">Weighted fuzzy matching · Sequences</text>
+
+<!-- FE → HMM -->
+<path d="M370,290 L370,365 L220,365 L220,460" fill="none" stroke="#9B82C8" stroke-width="1.2" marker-end="url(#a2)"/>
+<text x="294" y="360" text-anchor="middle" class="edge-label" font-style="italic">Unified Event Stream</text>
+
+<!-- FE → VMM -->
+<path d="M560,290 L560,460" fill="none" stroke="#9B82C8" stroke-width="1.2" marker-end="url(#a2)"/>
+
+<!-- HMM → VMM -->
+<path d="M350,493 L430,493" fill="none" stroke="#7558B2" stroke-width="1.4" marker-end="url(#a2)"/>
+<text x="390" y="486" text-anchor="middle" class="edge-label-bold">workflow state</text>
+<text x="390" y="498" text-anchor="middle" class="edge-label-bold">× confidence</text>
+
+<!-- VMM → FPS -->
+<path d="M690,493 L770,493" fill="none" stroke="#7558B2" stroke-width="1.4" marker-end="url(#a2)"/>
+<text x="730" y="487" text-anchor="middle" class="edge-label-bold">prediction</text>
+
+<!-- Confidence Aggregator -->
+<rect x="430" y="600" width="270" height="60" rx="6" fill="#F9F7FC" stroke="#C2B1D9" stroke-width="1"/>
+<text x="565" y="627" text-anchor="middle" class="node-title" fill="#3D2D6B">Confidence Aggregator</text>
+<text x="565" y="645" text-anchor="middle" class="node-sub">Combines scores · Threshold gating</text>
+
+<!-- VMM → CA -->
+<path d="M560,526 L560,600" fill="none" stroke="#9B82C8" stroke-width="1.2" marker-end="url(#a2)"/>
+<text x="576" y="566" class="edge-label" font-style="italic">probability</text>
+
+<!-- FPS → CA -->
+<path d="M900,526 L900,572 L700,572 L700,600" fill="none" stroke="#9B82C8" stroke-width="1.2" marker-end="url(#a2)"/>
+<text x="808" y="566" text-anchor="middle" class="edge-label" font-style="italic">pattern boost (+mid-seq)</text>
+
+<!-- Phase Gate Diamond -->
+<polygon points="565,710 625,750 565,790 505,750" fill="#FFF8EE" stroke="#CC6F1C" stroke-width="1.8"/>
+<text x="565" y="746" text-anchor="middle" font-size="10.5" font-weight="700" fill="#CC6F1C">PHASE</text>
+<text x="565" y="760" text-anchor="middle" font-size="10.5" font-weight="700" fill="#CC6F1C">GATE</text>
+
+<!-- CA → Phase Gate -->
+<path d="M565,660 L565,710" fill="none" stroke="#9B82C8" stroke-width="1.2" marker-end="url(#ag)"/>
+<text x="582" y="690" class="edge-label" font-style="italic">if threshold met</text>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SERVER SIDEBAR                              -->
+<!-- ════════════════════════════════════════════ -->
+<rect x="1200" y="390" width="440" height="440" rx="10" fill="#FDF5E8" stroke="#E4CFA4" stroke-width="1"/>
+<text x="1222" y="416" class="mono layer-label" fill="#B47520">PERSONAL SERVER (LOCAL NETWORK)</text>
+
+<rect x="1250" y="460" width="340" height="60" rx="6" fill="#FFFBF2" stroke="#DCC48F" stroke-width="1"/>
+<text x="1420" y="487" text-anchor="middle" class="node-title" fill="#5C3D0A">Log Shipping</text>
+<text x="1420" y="503" text-anchor="middle" class="node-sub">Laptop → Server periodic log transfer</text>
+
+<rect x="1250" y="570" width="340" height="60" rx="6" fill="#FFFBF2" stroke="#DCC48F" stroke-width="1"/>
+<text x="1420" y="597" text-anchor="middle" class="node-title" fill="#5C3D0A">HMM Batch Training</text>
+<text x="1420" y="613" text-anchor="middle" class="node-sub">Baum-Welch overnight · Compute-intensive</text>
+
+<rect x="1250" y="680" width="340" height="60" rx="6" fill="#FFFBF2" stroke="#DCC48F" stroke-width="1"/>
+<text x="1420" y="707" text-anchor="middle" class="node-title" fill="#5C3D0A">Model Sync</text>
+<text x="1420" y="723" text-anchor="middle" class="node-sub">Updated HMM pulled on first boot each day</text>
+
+<!-- FE → Log Shipping -->
+<path d="M880,254 L1150,254 L1150,490 L1250,490" fill="none" stroke="#C99944" stroke-width="1.2" marker-end="url(#as)"/>
+<text x="1153" y="378" class="edge-label mono" font-size="8" fill="#A0895A" transform="rotate(90 1153 378)">event logs</text>
+
+<!-- LS → HMM Batch -->
+<path d="M1420,520 L1420,570" fill="none" stroke="#C99944" stroke-width="1.2" marker-end="url(#as)"/>
+
+<!-- HMM Batch → Model Sync -->
+<path d="M1420,630 L1420,680" fill="none" stroke="#C99944" stroke-width="1.2" marker-end="url(#as)"/>
+
+<!-- DASHED: Model Sync → HMM -->
+<path d="M1250,710 L1150,710 L1150,860 L30,860 L30,493 L90,493" fill="none" stroke="#B47520" stroke-width="1.4" stroke-dasharray="8 4" marker-end="url(#as)"/>
+<text x="580" y="854" text-anchor="middle" class="mono edge-label-bold" fill="#A07020">↻ updated HMM model (daily sync on first boot)</text>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- LAYER 3 — EXECUTION                         -->
+<!-- ════════════════════════════════════════════ -->
+<rect x="60" y="910" width="1060" height="410" rx="10" fill="#EDF6F1" stroke="#B4D6C5" stroke-width="1"/>
+<text x="82" y="936" class="mono layer-label" fill="#2C7F5E">LAYER 3 — EXECUTION</text>
+
+<!-- Phase Gate → Training Mode -->
+<path d="M505,750 L280,750 L280,980" fill="none" stroke="#CC6F1C" stroke-width="1.3" marker-end="url(#a3)"/>
+<text x="370" y="766" class="edge-label-bold" fill="#CC6F1C">training mode</text>
+
+<!-- Phase Gate → Executing Mode -->
+<path d="M625,750 L810,750 L810,980" fill="none" stroke="#CC6F1C" stroke-width="1.3" marker-end="url(#a3)"/>
+<text x="730" y="766" class="edge-label-bold" fill="#CC6F1C">executing mode</text>
+
+<!-- Training Mode -->
+<rect x="155" y="980" width="250" height="55" rx="6" fill="#F5FBF8" stroke="#A2CBB6" stroke-width="1"/>
+<text x="280" y="1005" text-anchor="middle" class="node-title" fill="#1A5240">Training Mode</text>
+<text x="280" y="1022" text-anchor="middle" class="node-sub">Silent observation · No execution</text>
+
+<!-- Executing Mode -->
+<rect x="685" y="980" width="250" height="55" rx="6" fill="#F5FBF8" stroke="#A2CBB6" stroke-width="1"/>
+<text x="810" y="1005" text-anchor="middle" class="node-title" fill="#1A5240">Executing Mode</text>
+<text x="810" y="1022" text-anchor="middle" class="node-sub">Active automation path</text>
+
+<!-- Taskbar Widget -->
+<rect x="155" y="1080" width="250" height="55" rx="6" fill="#F5FBF8" stroke="#A2CBB6" stroke-width="1"/>
+<text x="280" y="1105" text-anchor="middle" class="node-title" fill="#1A5240">Taskbar / Topbar Widget</text>
+<text x="280" y="1122" text-anchor="middle" class="node-sub">Live prediction + confidence display</text>
+
+<!-- Training → Widget -->
+<path d="M280,1035 L280,1080" fill="none" stroke="#5AA88A" stroke-width="1.2" marker-end="url(#a3)"/>
+
+<!-- Suggestion UI -->
+<rect x="620" y="1080" width="215" height="55" rx="6" fill="#F5FBF8" stroke="#A2CBB6" stroke-width="1"/>
+<text x="728" y="1105" text-anchor="middle" class="node-title" fill="#1A5240">Suggestion UI</text>
+<text x="728" y="1122" text-anchor="middle" class="node-sub">Countdown · Cancel shortcut</text>
+
+<!-- Executor -->
+<rect x="860" y="1080" width="215" height="55" rx="6" fill="#F5FBF8" stroke="#A2CBB6" stroke-width="1"/>
+<text x="968" y="1105" text-anchor="middle" class="node-title" fill="#1A5240">Executor</text>
+<text x="968" y="1122" text-anchor="middle" class="node-sub">OS-level action execution</text>
+
+<!-- Executing → Suggestion UI -->
+<path d="M810,1035 L810,1060 L728,1060 L728,1080" fill="none" stroke="#5AA88A" stroke-width="1.2" marker-end="url(#a3)"/>
+
+<!-- Suggestion UI → Executor -->
+<path d="M835,1107 L860,1107" fill="none" stroke="#5AA88A" stroke-width="1.2" marker-end="url(#a3)"/>
+
+<!-- Feedback Collection -->
+<rect x="135" y="1195" width="850" height="72" rx="7" fill="#FDF0EE" stroke="#D9A49A" stroke-width="1.4"/>
+<text x="560" y="1226" text-anchor="middle" font-size="13.5" font-weight="700" fill="#8B3A2C">Feedback Collection</text>
+<text x="560" y="1246" text-anchor="middle" font-size="9" fill="#A06858">Shadow mode · Accept · Reject (pre-exec) · Undo (post-exec) · Ground truth logging</text>
+
+<!-- Widget → FC -->
+<path d="M280,1135 L280,1195" fill="none" stroke="#5AA88A" stroke-width="1.2" marker-end="url(#a3)"/>
+
+<!-- Executor → FC -->
+<path d="M968,1135 L968,1168 L800,1168 L800,1195" fill="none" stroke="#5AA88A" stroke-width="1.2" marker-end="url(#a3)"/>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- FEEDBACK LOOPS (dashed)                     -->
+<!-- ════════════════════════════════════════════ -->
+
+<!-- FC → VMM: left margin route -->
+<path d="M280,1267 L280,1310 L38,1310 L38,550 L545,550 L545,526"
+      fill="none" stroke="#BF5545" stroke-width="1.3" stroke-dasharray="7 4" marker-end="url(#af)"/>
+<rect x="90" y="1300" width="130" height="16" rx="3" fill="#FAF9F6"/>
+<text x="155" y="1312" text-anchor="middle" class="mono" font-size="8" font-weight="600" fill="#BF5545">↺ VMM online update</text>
+
+<!-- FC → FPS: right margin route (between main & server) -->
+<path d="M730,1267 L730,1330 L1160,1330 L1160,550 L915,550 L915,526"
+      fill="none" stroke="#BF5545" stroke-width="1.3" stroke-dasharray="7 4" marker-end="url(#af)"/>
+<rect x="870" y="1320" width="150" height="16" rx="3" fill="#FAF9F6"/>
+<text x="945" y="1332" text-anchor="middle" class="mono" font-size="8" font-weight="600" fill="#BF5545">↺ Pattern Store update</text>
+
+<!-- FC → Log Shipping: far right route -->
+<path d="M560,1267 L560,1350 L1665,1350 L1665,490 L1590,490"
+      fill="none" stroke="#BF5545" stroke-width="1.3" stroke-dasharray="7 4" marker-end="url(#af)"/>
+<rect x="1040" y="1340" width="165" height="16" rx="3" fill="#FAF9F6"/>
+<text x="1122" y="1352" text-anchor="middle" class="mono" font-size="8" font-weight="600" fill="#BF5545">↺ training data → server</text>
+
+</svg>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- REFERENCE SECTION                           -->
+<!-- ════════════════════════════════════════════ -->
+<div class="ref">
+  <h2>Component Reference</h2>
+  <p>Detailed explanation of every component in the ComputerAssist architecture.</p>
+
+  <div class="ltag l1">Layer 1 — Input</div>
+  <div class="grid">
+    <div class="c l1"><span class="n">#01</span><h3>OS Events Collector</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Monitors all OS-level activity: filesystem changes (inotify/fanotify), keyboard and mouse input (evdev), process spawns, app launches, and window focus changes. Broadest, lowest-level view of user activity.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Raw OS event streams from kernel APIs (inotify, fanotify, evdev, proc).</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Structured OS event records → Feature Extraction Layer.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Linux-native APIs for zero-overhead, purely event-driven capture. No polling — inotify for file events, fanotify for filesystem-wide monitoring, evdev for kernel-level input devices.</span></div>
+    </div></div>
+    <div class="c l1"><span class="n">#02</span><h3>Shell / Terminal Collector</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Hooks into zsh via precmd/preexec to capture every shell command before and after execution. Records full command string, exit code, duration, and working directory.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Zsh hook callbacks (precmd/preexec), shell environment variables.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Command event records (command, args, exit code, duration, cwd) → Feature Extraction.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">precmd fires before each prompt (post-execution data), preexec fires before command execution (pre-execution data). Together they bracket every command with full before/after context.</span></div>
+    </div></div>
+    <div class="c l1"><span class="n">#03</span><h3>WezTerm Collector</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Hooks into WezTerm's Lua API to capture pane splits, tab creation, window events, and cross-environment session state (WSL + PowerShell panes simultaneously).</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">WezTerm Lua event API callbacks.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Terminal session topology events → Feature Extraction.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">WezTerm's Lua API exposes session structure that tmux/screen cannot — particularly the ability to see both WSL and native Windows environments in a single event stream.</span></div>
+    </div></div>
+    <div class="c l1"><span class="n">#04</span><h3>Context Signals Collector</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Captures ambient context: battery %, WiFi SSID, GPS/location, time of day, day of week. Enables pattern disambiguation — same action may mean different things at home vs. work.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">System APIs for battery, network, location, system clock.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Context signal records → Feature Extraction.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Disambiguation features — they don't trigger predictions themselves but allow the prediction layer to differentiate superficially identical sequences in different environments.</span></div>
+    </div></div>
+    <div class="c l1"><span class="n">#05</span><h3>App Integrations</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Community-extensible plugin API. Individual apps (browser, editor, etc.) emit structured events through registered plugins, enabling in-app action understanding beyond OS-level monitoring.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Plugin callbacks using the standard event schema.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">App-specific structured events → Feature Extraction.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Standard schema any app can implement. Extensible without core modifications — community adds app support, events flow through the same pipeline as all other sources.</span></div>
+    </div></div>
+    <div class="c l1"><span class="n">#06</span><h3><span class="star">★</span> Feature Extraction Layer</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Most critical component. Transforms all raw events into structured, weighted feature vectors. Separates base commands from arguments (<code>z ~/path</code> → <code>{cmd:"z", weight:HIGH}</code> + <code>{arg:"~/path", weight:LOW}</code>). Assigns type-based weights, normalises to unified schema, tags with session context.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Raw event streams from all five collectors (heterogeneous formats).</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Unified Event Stream — structured, weighted feature vectors → HMM, VMM, and Log Shipping.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Every downstream model depends on this layer. Weight assignment here (HIGH for structural commands, LOW for variable arguments) enables fuzzy matching later. Single point where signal quality is determined for the entire system.</span></div>
+    </div></div>
+  </div>
+
+  <div class="ltag l2">Layer 2 — Prediction</div>
+  <div class="grid">
+    <div class="c l2"><span class="n">#07</span><h3>HMM — Hidden Markov Model</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Discovers hidden workflow states entirely unsupervised — states like "deployment session" or "coding startup" emerge from data without labels. Assigns current stream to a workflow state with confidence %.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Unified Event Stream from Feature Extraction.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Current workflow state + confidence % → VMM.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Trained overnight on Personal Server via Baum-Welch (EM for HMMs) — too compute-heavy for the laptop. Has its own per-feature dynamic weight system. Local copy updated daily via Model Sync.</span></div>
+    </div></div>
+    <div class="c l2"><span class="n">#08</span><h3>VMM — Variable-Order Markov Model</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Core prediction engine. Receives event stream + HMM state, predicts next action. Adaptive lookback depth (optimal history length per context, not fixed N). Continuous online learning — updates on every event.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Unified Event Stream + HMM's (workflow state × confidence).</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Next-action prediction + probability → Fuzzy Pattern Store (prediction) and Confidence Aggregator (probability).</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">HMM influence: <code>effective_weight = VMM_trust × HMM_confidence</code>. Uncertain HMM auto-dampens. Per-pattern, per-feature dynamic weights. Immediate online updates from Feedback Collection.</span></div>
+    </div></div>
+    <div class="c l2"><span class="n">#09</span><h3>Fuzzy Pattern Store</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Custom confidence validation. Stores confirmed recurring sequences with per-sequence weight profiles. Fuzzy weighted matching: high-weight features must match exactly, low-weight features are flexible.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">VMM's prediction.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Pattern boost signal → Confidence Aggregator. Strong boost if mid-sequence.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv"><code>z ~/projectA</code> and <code>z ~/projectB</code> match the same pattern: <code>z</code> (HIGH) matches exactly, path (LOW) is flexible. Mid-sequence bonus is critical for completion confidence.</span></div>
+    </div></div>
+    <div class="c l2"><span class="n">#10</span><h3>Confidence Aggregator</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Combines VMM probability + Fuzzy Pattern Store boost (including mid-sequence bonus) into single final confidence score. Applies threshold — only above-threshold predictions pass forward.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">VMM probability + pattern boost signal.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Final confidence score → Phase Gate (only if threshold met).</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Safety gate. Even high-probability VMM predictions only proceed if the combined score after pattern validation exceeds the threshold.</span></div>
+    </div></div>
+    <div class="c l2"><span class="n">#11</span><h3>Phase Gate</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Manual user-controlled mode switch. Routes predictions to Training Mode or Executing Mode. User flips when they've observed enough accuracy in the Taskbar Widget.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Above-threshold predictions + user's mode selection.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Prediction routed to Training Mode or Executing Mode.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Deliberately manual — system never auto-promotes to execution. Trust mechanism: observe in training, build confidence, then enable.</span></div>
+    </div></div>
+  </div>
+
+  <div class="ltag srv">Personal Server (Sidebar)</div>
+  <div class="grid">
+    <div class="c srv"><span class="n">#12</span><h3>Log Shipping</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Periodically ships structured event logs from laptop to personal server over local network. Also receives feedback/correction data from Feedback Collection as additional training input.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Event stream logs from Feature Extraction + feedback data from Feedback Collection.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Accumulated structured logs → HMM Batch Training.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Strictly local network — no cloud. Logs include raw events and feedback signals so HMM learns from both observed patterns and user-validated outcomes.</span></div>
+    </div></div>
+    <div class="c srv"><span class="n">#13</span><h3>HMM Batch Training</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Runs Baum-Welch on accumulated logs overnight while laptop is off. Discovers and refines hidden workflow states from full behaviour history.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Accumulated logs from Log Shipping.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Trained HMM model parameters → Model Sync.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Baum-Welch is computationally intensive (EM over full dataset). Overnight on server means laptop bears no cost. Each run incorporates feedback corrections.</span></div>
+    </div></div>
+    <div class="c srv"><span class="n">#14</span><h3>Model Sync</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">On laptop's first startup each day, pulls latest trained HMM from server and replaces local copy.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Trained HMM model from HMM Batch Training.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Updated HMM model → HMM (dashed feedback arrow).</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Once per day on first boot. HMM is stable throughout each day, gets improved version next morning. Daily cadence matches overnight training cycle.</span></div>
+    </div></div>
+  </div>
+
+  <div class="ltag l3">Layer 3 — Execution</div>
+  <div class="grid">
+    <div class="c l3"><span class="n">#15</span><h3>Training Mode</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Safe observation phase. Predictions computed and displayed but never executed. Full pipeline runs silently, results shown in Taskbar Widget.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Above-threshold predictions from Phase Gate (training mode).</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Live prediction + confidence → Taskbar Widget.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Where user builds trust — they work normally while watching. Accuracy observation leads to confidence for the switch to Executing Mode.</span></div>
+    </div></div>
+    <div class="c l3"><span class="n">#16</span><h3>Taskbar / Topbar Widget</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Displays live prediction and confidence in system taskbar. Persistent, non-intrusive window into system state.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Current prediction + confidence from Training Mode.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Observation signals → Feedback Collection (shadow mode data).</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Always visible but unobtrusive. Primary interface for judging model readiness. Active in both modes; in Training Mode it's the only output.</span></div>
+    </div></div>
+    <div class="c l3"><span class="n">#17</span><h3>Executing Mode</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Active automation phase. Routes predictions through Suggestion UI then Executor for OS-level execution.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Above-threshold predictions from Phase Gate (executing mode).</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Predictions → Suggestion UI → Executor.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">User-controlled. Even here, Suggestion UI provides cancel window — never fully unsupervised.</span></div>
+    </div></div>
+    <div class="c l3"><span class="n">#18</span><h3>Suggestion UI</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Shows readable description of pending action. Cancel shortcut + 2–3 second countdown. Mid-sequence: instant completion (skips countdown, user actions confirm intent).</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Predicted action sequence from Executing Mode.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Confirmed action → Executor.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Countdown is last line of defence. Mid-sequence instant completion: if steps 1–3 of 5 done, system completes 4–5 immediately.</span></div>
+    </div></div>
+    <div class="c l3"><span class="n">#19</span><h3>Executor</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Carries out action sequences at OS level: launch apps, run commands, file ops, system actions. Injects commands into WezTerm for terminal workflows. Future per-app actions via plugin API.</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Confirmed action from Suggestion UI.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Execution results → Feedback Collection.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">OS-level for max capability. WezTerm injection uses same Lua API as Collector — symmetric read/write loop.</span></div>
+    </div></div>
+    <div class="c l3"><span class="n">#20</span><h3>Feedback Collection</h3><div class="m">
+      <div class="mr"><span class="ml">Does</span><span class="mv">Receives signals from Widget + Executor. Four modes: shadow (continuous silent comparison), accept (strong positive), reject pre-exec (negative + logs show correction), undo post-exec (negative + logs show correction).</span></div>
+      <div class="mr"><span class="ml">Input</span><span class="mv">Signals from Taskbar Widget and Executor.</span></div>
+      <div class="mr"><span class="ml">Output</span><span class="mv">Three loops: (1) VMM online update, (2) FPS pattern validation, (3) Log Shipping for HMM retraining.</span></div>
+      <div class="mr"><span class="ml">Detail</span><span class="mv">Event log always captures ground truth. Shadow mode runs in both modes — system always self-evaluates. Reject/Undo are most valuable: subsequent user actions reveal what should have happened.</span></div>
+    </div></div>
+  </div>
+
+    <div class="c l3" style="grid-column:1/-1;border-left-color:#BF5545"><span class="n">#20b</span><h3>Feedback Loops (Dashed Arrows)</h3><div class="m">
+      <div class="mr"><span class="ml">Overview</span><span class="mv">Three dashed feedback paths carry learning signals from Feedback Collection back upstream, closing the loop so the system continuously self-improves from every interaction.</span></div>
+      <div class="mr"><span class="ml">→ VMM</span><span class="mv">Immediate online weight update. Every feedback signal (accept, reject, undo, shadow comparison) triggers a real-time adjustment to the VMM's per-pattern and per-feature weights. This is how the VMM learns continuously without retraining — it adapts on every single event.</span></div>
+      <div class="mr"><span class="ml">→ FPS</span><span class="mv">Pattern validation update. Confirms or invalidates stored sequences in the Fuzzy Pattern Store. Accepted predictions strengthen a pattern's confidence; rejected or undone predictions weaken or remove it. This keeps the pattern library accurate over time.</span></div>
+      <div class="mr"><span class="ml">→ Server</span><span class="mv">Feedback and correction data shipped to Log Shipping as additional training input for the next HMM batch training run. This means the HMM doesn't just learn from raw event logs — it also learns from the user's explicit accept/reject/undo signals and the corrected action sequences that follow.</span></div>
+    </div></div>
+  </div>
+
+  <div class="ltag cross">Core System — Adaptive Weight Engine</div>
+  <div class="grid">
+    <div class="c cross" style="grid-column:1/-1"><span class="n">#21</span><h3>Weight System (Adaptive, Per-Feature, Per-Pattern)</h3><div class="m">
+      <div class="mr"><span class="ml">Overview</span><span class="mv">Cross-cutting adaptive weight system inside HMM, VMM, and Fuzzy Pattern Store. Each component maintains per-feature and per-pattern dynamic weights evolving from accuracy and feedback.</span></div>
+      <div class="mr"><span class="ml">Base</span><span class="mv">Initial weights by type in Feature Extraction: structural features (commands, app names) → HIGH; variable features (paths, args) → LOW. Establishes the signal-to-noise hierarchy.</span></div>
+      <div class="mr"><span class="ml">In HMM</span><span class="mv">Per-feature weights in emission/transition matrices. Strong workflow-state indicators amplified; noisy features dampened. Updated during overnight Baum-Welch training.</span></div>
+      <div class="mr"><span class="ml">In VMM</span><span class="mv">Per-pattern and per-feature weights. Each pattern has its own profile; features weighted by predictive value. Updated immediately (online) — accepts boost, rejects/undos decrease.</span></div>
+      <div class="mr"><span class="ml">In FPS</span><span class="mv">Per-sequence weight profiles control fuzzy matching. <code>z ~/projectA</code> and <code>z ~/projectB</code> match because command (HIGH) matches exactly, path (LOW) is flexible. Updated from Feedback Collection.</span></div>
+      <div class="mr"><span class="ml">Feedback</span><span class="mv">All updates flow through Feedback Collection. Accepts strengthen weights. Rejects/Undos reduce influence of error-causing features. Self-correcting: bad predictions shift weight profiles away from the error.</span></div>
+    </div></div>
+  </div>
+</div>
+</body>
+</html>
