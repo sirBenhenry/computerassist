@@ -58,3 +58,7 @@ def predict_next_element(percentages,current_input,list_of_inputs):
     next_element = list(list_of_inputs[current_input].keys())[highest_idx]
     return next_element
 
+
+if __name__ == "__main__":
+    main(current_input,list_of_inputs,previous_input,percentages)
+
